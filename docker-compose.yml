@@ -1,0 +1,108 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - webapp
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 15s
+      timeout: 30s
+      retries: 3
+
+  redis:
+    image: redis:7.2.4
+    hostname: redis
+    ports:
+      - '6379:6379'
+    networks:
+      - webapp
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli ping | grep PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    hostname: elasticsearch
+    ports:
+      - '9200:9200'
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - node.name=elastic-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl --silent --fail localhost:9200/_cluster/health || exit 1']
+      interval: 15s
+      timeout: 30s
+      retries: 3
+    networks:
+      - webapp
+
+  kibana:
+    image: kibana:8.13.0
+    hostname: kibana
+    ports:
+      - '5601:5601'
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - webapp
+
+  webapp:
+    image: nmalpani17/plan-app-webapp:1.0.2
+    hostname: webapp
+    ports:
+      - '8080:8080'
+      - '8081:8081'
+      - '4000:4000'
+    environment:
+      - PORT=8080
+      - PORT_GRAPHQL=4000
+      - REDIS_HOST=redis
+      - RABBITMQ_URL=amqp://rabbitmq
+      - ELASTIC_SEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - webapp
+
+  consumer:
+    image: nmalpani17/plan-app-consumer:1.0.2
+    hostname: consumer
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq
+      - ELASTIC_SEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - webapp
+
+volumes:
+  esdata:
+    driver: local
+
+networks:
+  webapp:
+    driver: bridge

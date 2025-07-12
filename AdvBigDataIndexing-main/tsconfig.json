@@ -1,0 +1,36 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "ES5",
+            "ES6",
+            "ESNext",
+            "dom"
+        ],
+        "outDir": "./dist",
+        "removeComments": true,
+        "target": "ES6",
+        "baseUrl": "./",
+        "esModuleInterop": true,
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "paths": {},
+        "sourceMap": true,
+        "sourceRoot": "/",
+        "alwaysStrict": true,
+        "allowUnreachableCode": false,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "noImplicitReturns": true,
+        "noUncheckedIndexedAccess": true,
+        "noUnusedLocals": true,
+        "forceConsistentCasingInFileNames": true,
+        "noUnusedParameters": true,
+        "skipLibCheck": true
+    },
+    "include": [
+        "./**/*.ts"
+    ],
+    "exclude": [
+        "node_modules/**/*"
+    ]
+}
